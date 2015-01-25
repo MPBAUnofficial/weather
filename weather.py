@@ -21,7 +21,13 @@ def get_stations():
     attibutes : code, name, altitude, lat, lon, est, north"""
 
     #get stations details
-    r = requests.get(settings.STATIONS_URL)
+    try:
+        r = requests.get(settings.STATIONS_URL)
+    except requests.exceptions.ConnectionError:
+        raven_client.captureMessage('Could not connect to url '
+                                    +settings.STATIONS_URL)
+        return []
+
     if not r.ok:
         raven_client.captureMessage('Could not fetch meteo stations information'
                                     'from url '+settings.STATIONS_URL)
@@ -70,7 +76,13 @@ def get_station_last_data(station_code):
 
     #get station data
     parameters = {'codice' : station_code}
-    r = requests.get(settings.STATION_LAST_DATA_URL, params=parameters)
+    try:
+        r = requests.get(settings.STATION_LAST_DATA_URL, params=parameters)
+    except requests.exceptions.ConnectionError:
+        raven_client.captureMessage('Could not connect to url '
+                                    +settings.STATION_LAST_DATA_URL)
+        return []
+
     if not r.ok:
         raven_client.captureMessage('Could not fetch data for station {} at'
                                     ' url {}.'.format(station_code,
@@ -123,6 +135,9 @@ def get_station_last_data(station_code):
 
 
 if __name__=='__main__':
+    import pprint
     stations = get_stations()
     for station in stations:
-        get_station_last_data(station['code'])
+        data = get_station_last_data(station['code'])
+        pprint.pprint(data)
+
